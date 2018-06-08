@@ -136,15 +136,16 @@ class PhpDocuSignWrapper {
         switch ($key) {
           case 'signHereTabs':
             $status = !empty($form_data['status']) ? $form_data['status'] : FALSE;
-            $tabs_and_fields_and_values[$key][$form_data['tabId']] = array($form_data['name'] => $status);
+            $tabs_and_fields_and_values[$key][$form_data['tabId']] = array($form_data['tabLabel'] => $status);
             break;
           case 'textTabs':
-            $tabs_and_fields_and_values[$key][$form_data['tabId']] = array($form_data['tabLabel'] => $form_data['value']);
-            break;
           case 'fullNameTabs':
           case 'emailAddressTabs':
           default:
-            $tabs_and_fields_and_values[$key][$form_data['tabId']] = array($form_data['name'] => $form_data['value']);
+            if(empty($form_data['value'])) {
+              $form_data['value'] = '';
+            }
+            $tabs_and_fields_and_values[$key][$form_data['tabId']] = array($form_data['tabLabel'] => $form_data['value']);
             break;
         }
       }
