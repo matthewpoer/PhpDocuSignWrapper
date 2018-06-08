@@ -1,0 +1,8 @@
+{
+    "name": "matthewpoer/PhpDocuSignWrapper",
+    "version": "1.0",
+    "require": {
+        "educoder/pest": "^1.0",
+        "php": ">5.6"
+    }
+}
