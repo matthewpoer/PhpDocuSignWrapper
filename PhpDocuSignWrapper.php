@@ -40,16 +40,31 @@ class PhpDocuSignWrapper {
    * array.
    * @param string $method lower-case REST verb, e.g. get, put, post, etc.
    * @param string $url the endpoint, not includeing the host or "/v2" portion
+   *               or any leading slashes. If $include_account is TRUE then the
+   *               passed-in URL does not need to include the Account reference
    * @param array $get_params optional GET parameters
    * @param array $additional_headers
+   * @param bool $include_account automatically include /account/AccountId in
+   *             the URL we're calling. Default TRUE because the only time we
+   *             seem to not use this is on login
    * @return array
    */
   private function _call(
     $method = 'get',
     $url,
     $get_params = array(),
-    $additional_headers = array()
+    $additional_headers = array(),
+    $include_account = TRUE
   ) {
+    if($include_account) {
+      $url = '/accounts/' . $this->account_id . '/' . $url;
+    }
+
+    // do not forget leading slash
+    if(substr($url, 0, 1) != '/') {
+      $url = '/' . $url;
+    }
+
     $headers = array_merge($this->auth, $additional_headers);
     $thing = $this->pest->$method($url, $get_params, $headers);
     return json_decode($thing, TRUE);
@@ -61,7 +76,7 @@ class PhpDocuSignWrapper {
    */
   private function login() {
     $params = array('api_password', TRUE);
-    $result = $this->_call('get', '/login_information', $params);
+    $result = $this->_call('get', 'login_information', $params, array(), FALSE);
     $this->account_id = $result['loginAccounts'][0]['accountId'];
     return TRUE;
   }
@@ -73,7 +88,7 @@ class PhpDocuSignWrapper {
    * @return array
    */
   public function get_envelopes($from = '1970-01-01') {
-    $url = '/accounts/' . $this->account_id . '/envelopes?from_date=' . $from;
+    $url = 'envelopes?from_date=' . $from;
     $result = $this->_call('get', $url);
     $envelopes = array();
     foreach($result['envelopes'] as $envelope) {
@@ -89,7 +104,7 @@ class PhpDocuSignWrapper {
    * @return array
    */
   public function get_recipients_for_envelope($envelope_id) {
-    $url = '/accounts/' . $this->account_id . '/envelopes/' . $envelope_id . '/recipients';
+    $url = 'envelopes/' . $envelope_id . '/recipients';
     $result = $this->_call('get', $url);
     $recipients = array();
     foreach($result['signers'] as $signers) {
@@ -125,7 +140,7 @@ class PhpDocuSignWrapper {
    * @return array of field types, fields and values
    */
   public function get_tabs_for_recipient_for_envelope($envelope_id, $recipient_id) {
-    $url = '/accounts/' . $this->account_id . '/envelopes/' . $envelope_id . '/recipients/' . $recipient_id . '/tabs';
+    $url = 'envelopes/' . $envelope_id . '/recipients/' . $recipient_id . '/tabs';
     $result = $this->_call('get', $url);
     $tabs_and_fields_and_values = array();
     foreach($result as $key => $value) {
@@ -161,8 +176,7 @@ class PhpDocuSignWrapper {
    * @return array of folders, with the ID as the key and Name as the value
    */
   public function get_folders($flatten = TRUE) {
-    $url = '/accounts/' . $this->account_id . '/folders';
-    $result = $this->_call('get', $url);
+    $result = $this->_call('get', 'folders');
     $folders = array();
     foreach($result['folders'] as $folder) {
       $folders[$folder['folderId']] = $folder['name'];
@@ -195,8 +209,7 @@ class PhpDocuSignWrapper {
    * @return array of envelopes inside a folder
    */
   public function get_folder_contents($folderId, $include_status = FALSE) {
-    $url = '/accounts/' . $this->account_id . '/folders/' . $folderId;
-    $result = $this->_call('get', $url);
+    $result = $this->_call('get', 'folders/' . $folderId);
     $envelopes = array();
     foreach($result['folderItems'] as $envelope) {
       $subject = $envelope['subject'];
