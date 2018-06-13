@@ -152,4 +152,59 @@ class PhpDocuSignWrapper {
     }
     return $tabs_and_fields_and_values;
   }
+
+  /**
+   * Get a list of all accessible folders. The list will be flattened and not
+   * respect folder hierarchy.
+   * @todo implement something to help us respect folder hierarchy
+   * @param bool $flatten default TRUE, unusused. this is a todo item
+   * @return array of folders, with the ID as the key and Name as the value
+   */
+  public function get_folders($flatten = TRUE) {
+    $url = '/accounts/' . $this->account_id . '/folders';
+    $result = $this->_call('get', $url);
+    $folders = array();
+    foreach($result['folders'] as $folder) {
+      $folders[$folder['folderId']] = $folder['name'];
+      $this->get_folders_recusive($folders, $folder);
+    }
+    return $folders;
+  }
+
+  /**
+   * walk through any of child folders of the current folder, and child folders
+   * of those child folders...
+   * @see get_folders()
+   */
+  private function get_folders_recusive(&$folders, $folder) {
+    $folder['folders'] = empty($folder['folders']) ? array() : $folder['folders'];
+    foreach($folder['folders'] as $child_folder) {
+      $folders[$child_folder['folderId']] = $child_folder['name'];
+      $this->get_folders_recusive($folders, $child_folder);
+    }
+  }
+
+  /**
+   * list envelopes in a folder
+   * @todo DocuSign API docs. state 100 envelopes will be returned at a time,
+   *       but this does not currently check $result['totalSetSize'] and ask for
+   *       more like it should
+   * @param string $folderId the ID of the folder to check
+   * @param bool $include_status whether or not to include the sending status in
+   *             the name of the envelope
+   * @return array of envelopes inside a folder
+   */
+  public function get_folder_contents($folderId, $include_status = FALSE) {
+    $url = '/accounts/' . $this->account_id . '/folders/' . $folderId;
+    $result = $this->_call('get', $url);
+    $envelopes = array();
+    foreach($result['folderItems'] as $envelope) {
+      $subject = $envelope['subject'];
+      if($include_status) {
+        $subject .= ' (' . $envelope['status'] . ')';
+      }
+      $envelopes[$envelope['envelopeId']] = $subject;
+    }
+    return $envelopes;
+  }
 }
