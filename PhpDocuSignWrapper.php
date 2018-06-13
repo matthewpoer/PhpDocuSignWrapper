@@ -220,4 +220,36 @@ class PhpDocuSignWrapper {
     }
     return $envelopes;
   }
+
+  /**
+   * get list of DocuSign users
+   * @param bool $active_only toggle TRUE to only see active users
+   * @return array of (userId => userName) for all users
+   */
+  public function get_users($active_only = FALSE) {
+    $params = array();
+    if($active_only) {
+      $params = array('status' => 'Active');
+    }
+    $result = $this->_call('get', 'users', $params);
+    $users = array();
+    foreach($result['users'] as $user) {
+      $users[$user['userId']] = $user['userName'];
+    }
+    return $users;
+  }
+
+  /**
+   * find all groups associated with a given user
+   * @param string $userId
+   * @return array of group info
+   */
+  public function get_user_groups($userId) {
+    $result = $this->_call('get', 'users/' . $userId);
+    $groups = array();
+    foreach($result['groupList'] as $groupInfo) {
+      $groups[$groupInfo['groupId']] = $groupInfo['groupName'];
+    }
+    return $groups;
+  }
 }
