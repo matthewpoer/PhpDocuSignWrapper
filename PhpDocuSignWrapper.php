@@ -107,6 +107,7 @@ class PhpDocuSignWrapper {
    * @return array
    */
   public function get_envelopes($statuses = array(), $from = '1970-01-01') {
+    $from = urlencode($from);
     $url = 'envelopes?from_date=' . $from;
     if(!empty($statuses)) {
       $url .= '&status=' . implode($statuses,',');
