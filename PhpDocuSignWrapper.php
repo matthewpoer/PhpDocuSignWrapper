@@ -154,32 +154,38 @@ class PhpDocuSignWrapper {
    * </code>
    * @param string $envelope_id the ID of the envelope to search
    * @param string $recipient_id the ID of the recipient to search
+   * @param bool $name_value_only adjust output organization by grouping fields
+   *             by field-type and index by Field ID (default false)
    * @return array of field types, fields and values
    */
-  public function get_tabs_for_recipient_for_envelope($envelope_id, $recipient_id) {
+  public function get_tabs_for_recipient_for_envelope($envelope_id, $recipient_id, $name_value_only = TRUE) {
     $url = 'envelopes/' . $envelope_id . '/recipients/' . $recipient_id . '/tabs';
     $result = $this->_call('get', $url);
     $tabs_and_fields_and_values = array();
     foreach($result as $key => $value) {
-      if(!isset($tabs_and_fields_and_values[$key])) {
-        $tabs_and_fields_and_values[$key] = array();
-      }
       foreach($value as $form_key => $form_data) {
         switch ($key) {
           case 'signHereTabs':
-            $status = !empty($form_data['status']) ? $form_data['status'] : FALSE;
-            $tabs_and_fields_and_values[$key][$form_data['tabId']] = array($form_data['tabLabel'] => $status);
+            $field_value = !empty($form_data['status']) ? $form_data['status'] : FALSE;
             break;
           case 'textTabs':
           case 'fullNameTabs':
           case 'emailAddressTabs':
           default:
-            if(empty($form_data['value'])) {
-              $form_data['value'] = '';
-            }
-            $tabs_and_fields_and_values[$key][$form_data['tabId']] = array($form_data['tabLabel'] => $form_data['value']);
+            $field_value = empty($form_data['value']) ? '' : $form_data['value'];
             break;
         }
+
+        if($name_value_only) {
+          $tabs_and_fields_and_values[$form_data['tabLabel']] = $field_value;
+        }
+        else {
+          if(!isset($tabs_and_fields_and_values[$key])) {
+            $tabs_and_fields_and_values[$key] = array();
+          }
+          $tabs_and_fields_and_values[$key][$form_data['tabId']] = array($form_data['tabLabel'] => $field_value);
+        }
+
       }
     }
     return $tabs_and_fields_and_values;
