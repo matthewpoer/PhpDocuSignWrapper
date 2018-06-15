@@ -1,9 +1,9 @@
 <?php
 class PhpDocuSignWrapper {
-  var $host = '';
-  var $auth = array();
-  var $account_id = '';
-  var $pest = NULL;
+  private $host = '';
+  private $auth = array();
+  private $account_id = '';
+  private $pest = NULL;
 
   /**
    * Start the DocuSign API interaction by supplying connection directionly
@@ -18,7 +18,7 @@ class PhpDocuSignWrapper {
    *                  https://developers.docusign.com/esign-rest-api/guides for
    *                  more info.
    */
-  public function __construct($host, $user, $pass, $key) {
+  public function __construct($host, $user, $pass, $key, $account_id) {
     $this->host = $host;
     $this->auth = array(
       'Content-Type' => 'application/json',
@@ -29,7 +29,7 @@ class PhpDocuSignWrapper {
     )));
 
     $this->pest = new Pest($this->host);
-    $this->login();
+    $this->login($account_id);
   }
 
   /**
@@ -56,6 +56,7 @@ class PhpDocuSignWrapper {
     $additional_headers = array(),
     $include_account = TRUE
   ) {
+
     if($include_account) {
       $url = '/accounts/' . $this->account_id . '/' . $url;
     }
@@ -73,12 +74,29 @@ class PhpDocuSignWrapper {
   /**
    * Authenticate with the DocuSign API. This will specify the Account ID for
    * all API calls to follow.
+   * @param $account_id string specify the Account to interact with
+   * @param $second bool Is this the secondary login call?
+   *        note that we must login to the www. host to confirm access and the
+   *        correct host, then call the login API a second time on the correct
+   *        production host (e.g. NA3).
    */
-  private function login() {
-    $params = array('api_password', TRUE);
+  private function login($account_id, $second = FALSE) {
+    // $params = array('api_password', TRUE);
+    $params = array();
     $result = $this->_call('get', 'login_information', $params, array(), FALSE);
-    $this->account_id = $result['loginAccounts'][0]['accountId'];
-    return TRUE;
+    foreach($result['loginAccounts'] as $loginAccount) {
+      if($loginAccount['accountId'] == $account_id) {
+        $this->account_id = $account_id;
+        $this->host =
+          'https://'
+          . parse_url($loginAccount['baseUrl'], PHP_URL_HOST)
+          . '/restapi/v2/';
+        $this->pest = new Pest($this->host);
+        return $second ? TRUE : $this->login($account_id, TRUE);
+      }
+    }
+    throw new Exception("Unable to access specified Account ID: {$account_id}");
+    return FALSE;
   }
 
   /**
