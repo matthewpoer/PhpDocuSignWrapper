@@ -81,7 +81,6 @@ class PhpDocuSignWrapper {
    *        production host (e.g. NA3).
    */
   private function login($account_id, $second = FALSE) {
-    // $params = array('api_password', TRUE);
     $params = array();
     $result = $this->_call('get', 'login_information', $params, array(), FALSE);
     foreach($result['loginAccounts'] as $loginAccount) {

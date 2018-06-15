@@ -1,5 +1,5 @@
 # php-docusign-wrapper
-DocuSign offers a reliable and RESTful (although somewhat confusingly architected) v2 API. However, I found that the [official PHP SDK](https://github.com/docusign/docusign-php-client) to just *not work* out of the box. Tried with a few different versions of PHP, tried a few hosts. There are bugs with the namespaces and/or file/class structure. Or something. But the REST API was simple enough that it would be less work to work on a new wrapper than debug. theirs.
+DocuSign offers a reliable and RESTful (although somewhat confusingly architected) v2 API. However, I found that the [official PHP SDK](https://github.com/docusign/docusign-php-client) to just *not work* out of the box. Tried with a few different versions of PHP, tried a few hosts. There are bugs with the namespaces and/or file/class structure. Or something. But the REST API was simple enough that it would be less work to work on a new wrapper than debug theirs.
 
 This codebase will implement basic Auth., interaction with envelopes, recipients, forms and related data. My business goal is to organize the data returned via such forms. Methods outside of this goal will likely not be implemented, but if you want to enhance and share your work back feel free to throw up a pull request.
 
@@ -29,34 +29,91 @@ Thanks, @Damian!
 composer require matthewpoer/php-docusign-wrapper:dev-master
 ```
 
+## Authentication
+While OAuth is supported by the DocuSign API, it's not implemented here. Instead we're using the [Legacy Header Authentication login method](https://developers.docusign.com/esign-rest-api/reference/Authentication/Authentication/login). Sorry about that.
+
+### API Password
+DocuSign does offer a solution to the cleartext password issue inherent here, and that is by providing us with an what the documentation calls the "apiPassword,"
+
+> a token that can be used for authentication in API calls instead of using the user name and password
+
+Okay, great. A Bash script is included here to get this API Password from DocuSign, just
+
+```
+$ ./GetApiPassword.sh
+Host? enter a subdomain, i.e. 'demo' or 'www'
+www
+Username:
+user@host.tld
+Password:
+Integrator Key:
+my-integrator-key
+requesting API Password...
+API Password Found:
+"apiPassword": "Your Cool API Password"
+```
+
 ## Sample Code
 ```
 <?php
 // maybe you define your connection info. in a config file?
 require_once('config.php');
 
-// invoke the class to handle login
-require_once('vendor/autoload.php');
-$ds = new PhpDocuSignWrapper(
-  DOCUSIGN_HOST, DOCUSIGN_EMAIL, DOCUSIGN_PASSWORD, DOCUSIGN_INTEGRATOR_KEY
-);
+try {
 
-// build up a list all envelopes
-$envelopes = $ds->get_envelopes();
+  // invocation and auth.
+  echo "Accessing DocuSign..." . PHP_EOL;
+  $ds = new PhpDocuSignWrapper(
+    DOCUSIGN_HOST,
+    DOCUSIGN_EMAIL,
+    DOCUSIGN_PASSWORD,
+    DOCUSIGN_INTEGRATOR_KEY,
+    DOCUSIGN_ACCOUNT_ID
+  );
 
-// build list of recipients on to all envelopes
-foreach($envelopes as $envelope_id => $envelope) {
-  $envelopes[$envelope_id] = $ds->get_recipients_for_envelope($envelope_id);
-}
-
-// build recipients and their form data for all envelopes
-foreach($envelopes as $envelope_id => $envelope_recipients) {
-  foreach($envelope_recipients as $envelope_recipient_id => $envelope_recipient) {
-    $field_data = $ds->get_tabs_for_recipient_for_envelope($envelope_id, $envelope_recipient_id);
-    $envelopes[$envelope_id][$envelope_recipient_id] = $field_data;
+  // list all users
+  echo "Preparing All User Retrieval..." . PHP_EOL;
+  $users = $ds->get_users();
+  $user_count = count($users);
+  echo "Found {$user_count} Users:" . PHP_EOL;
+  foreach($users as $userId => $userName) {
+    echo "\t{$userName}" . PHP_EOL;
   }
+
+  // list only the active users, also show their group associations
+  echo "Preparing Active-Only User Retrieval..." . PHP_EOL;
+  $users = $ds->get_users(TRUE);
+  $user_count = count($users);
+  echo "Found {$user_count} Users:" . PHP_EOL;
+  foreach($users as $userId => $userName) {
+    echo "\t{$userName} has the following groups:" . PHP_EOL;
+    foreach($ds->get_user_groups($userId) as $group_name) {
+      echo "\t\t-- {$group_name}" . PHP_EOL;
+    }
+  }
+
+  // list all seen folders and their envelopes
+  echo "Preparing folder list..." . PHP_EOL;
+  $folders = $ds->get_folders();
+  $folders_count = count($folders);
+  echo "Found {$folders_count} Folders:" . PHP_EOL;
+  foreach($folders as $folderId => $folderName) {
+    echo "Contents of $folderName:" . PHP_EOL;
+    $contents = $ds->get_folder_contents($folderId);
+    if(empty($contents)) {
+      echo "\t-- folder is empty --" . PHP_EOL;
+    }
+    foreach($contents as $envelopeId => $envelopeName) {
+      echo "\t{$envelopeName}" . PHP_EOL;
+    }
+  }
+
+} catch(\Exception $e) {
+  $message = $e->getMessage();
+  echo 'Error working with DocuSign. Exception: '
+    . PHP_EOL
+    . $message
+    . PHP_EOL;
 }
 
-// dump results from the first envelope we found
-var_dump(array_shift($envelopes));
 ```
