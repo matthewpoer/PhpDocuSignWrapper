@@ -171,25 +171,36 @@ class PhpDocuSignWrapper {
     foreach($result as $key => $value) {
       foreach($value as $form_key => $form_data) {
         switch ($key) {
+          case 'radioGroupTabs':
+            $field_label = $form_data['groupName'];
+            $field_value = '';
+            foreach($form_data['radios'] as $radio) {
+              if($radio['selected'] == 'true') {
+                $field_value = $radio['value'];
+              }
+            }
+            break;
           case 'signHereTabs':
+            $field_label = $form_data['tabLabel'];
             $field_value = !empty($form_data['status']) ? $form_data['status'] : FALSE;
             break;
           case 'textTabs':
           case 'fullNameTabs':
           case 'emailAddressTabs':
           default:
+            $field_label = $form_data['tabLabel'];
             $field_value = empty($form_data['value']) ? '' : $form_data['value'];
             break;
         }
 
         if($name_value_only) {
-          $tabs_and_fields_and_values[$form_data['tabLabel']] = $field_value;
+          $tabs_and_fields_and_values[$field_label] = $field_value;
         }
         else {
           if(!isset($tabs_and_fields_and_values[$key])) {
             $tabs_and_fields_and_values[$key] = array();
           }
-          $tabs_and_fields_and_values[$key][$form_data['tabId']] = array($form_data['tabLabel'] => $field_value);
+          $tabs_and_fields_and_values[$key][$form_data['tabId']] = array($field_label => $field_value);
         }
 
       }
