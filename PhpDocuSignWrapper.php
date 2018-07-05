@@ -101,16 +101,25 @@ class PhpDocuSignWrapper {
   /**
    * Get a list of all envelopes' IDs from a certain date. If not date is
    * specified then we will send 1970-01-01 and fetch all envelopes.
-   * @param array statuses array of Status values to be includes. If empty, no
-   *              filter will be used on Status (default)
    * @param string $from date in YYYY-mm-dd format
+   * @param array $other_filters array of filters as key-values pairs to be
+   *              included in the API request. If empty, no filter will be used
    * @return array
    */
-  public function get_envelopes($statuses = array(), $from = '1970-01-01') {
+  public function get_envelopes($from = '1970-01-01', $other_filters = array()) {
     $from = urlencode($from);
     $url = 'envelopes?from_date=' . $from;
-    if(!empty($statuses)) {
-      $url .= '&status=' . implode($statuses,',');
+    foreach($other_filters as $key => $value) {
+      if(is_array($value)) {
+        foreach($value as $value_key => $value_value) {
+          $value[$value_key] = urlencode($value_value);
+        }
+        $value = implode($value,',');
+      }
+      else {
+        $value = urlencode($value);
+      }
+      $url .= '&' . $key . '=' . $value;
     }
     $result = $this->_call('get', $url);
     $envelopes = array();
