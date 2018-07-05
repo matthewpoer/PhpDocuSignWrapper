@@ -191,7 +191,14 @@ class PhpDocuSignWrapper {
             break;
           case 'signHereTabs':
             $field_label = $form_data['tabLabel'];
-            $field_value = !empty($form_data['status']) ? $form_data['status'] : FALSE;
+            $field_value = !empty($form_data['status']) ? $form_data['status'] : '0';
+            break;
+          case 'checkboxTabs':
+            $field_label = $form_data['tabLabel'];
+            $field_value = '0';
+            if(!empty($form_data['selected']) && $form_data['selected'] == 'true') {
+              $field_value = '1';
+            }
             break;
           case 'textTabs':
           case 'fullNameTabs':
