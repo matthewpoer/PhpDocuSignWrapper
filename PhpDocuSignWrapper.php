@@ -200,6 +200,13 @@ class PhpDocuSignWrapper {
               $field_value = '1';
             }
             break;
+          case 'initialHereTabs':
+            $field_label = $form_data['tabLabel'];
+            $field_value = '0';
+            if(!empty($form_data['status']) && $form_data['status'] == 'signed') {
+              $field_value = '1';
+            }
+            break;
           case 'textTabs':
           case 'fullNameTabs':
           case 'emailAddressTabs':
