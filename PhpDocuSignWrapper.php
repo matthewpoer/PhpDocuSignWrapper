@@ -315,4 +315,13 @@ class PhpDocuSignWrapper {
     }
     return $groups;
   }
+
+  public function get_templates_for_envelope($envelopeId) {
+    $result = $this->_call('get', 'envelopes/' . $envelopeId . '/templates');
+    $templates = array();
+    foreach($result['templates'] as $templateInfo) {
+      $templates[$templateInfo['templateId']] = $templateInfo['name'];
+    }
+    return $templates;
+  }
 }
