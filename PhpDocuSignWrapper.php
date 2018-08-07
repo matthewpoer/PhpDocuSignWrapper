@@ -241,6 +241,9 @@ class PhpDocuSignWrapper {
   public function get_folders($flatten = TRUE) {
     $result = $this->_call('get', 'folders');
     $folders = array();
+    if(empty($result['folders'])) {
+      return $folders;
+    }
     foreach($result['folders'] as $folder) {
       $folders[$folder['folderId']] = $folder['name'];
       $this->get_folders_recusive($folders, $folder);
@@ -274,6 +277,9 @@ class PhpDocuSignWrapper {
   public function get_folder_contents($folderId, $include_status = FALSE) {
     $result = $this->_call('get', 'folders/' . $folderId);
     $envelopes = array();
+    if(empty($result['folderItems'])) {
+      return $envelopes;
+    }
     foreach($result['folderItems'] as $envelope) {
       $subject = $envelope['subject'];
       if($include_status) {
@@ -310,6 +316,9 @@ class PhpDocuSignWrapper {
   public function get_user_groups($userId) {
     $result = $this->_call('get', 'users/' . $userId);
     $groups = array();
+    if(empty($result['groupList'])) {
+      return $groups;
+    }
     foreach($result['groupList'] as $groupInfo) {
       $groups[$groupInfo['groupId']] = $groupInfo['groupName'];
     }
@@ -319,6 +328,9 @@ class PhpDocuSignWrapper {
   public function get_templates_for_envelope($envelopeId) {
     $result = $this->_call('get', 'envelopes/' . $envelopeId . '/templates');
     $templates = array();
+    if(empty($result['templates'])) {
+      return $templates;
+    }
     foreach($result['templates'] as $templateInfo) {
       $templates[$templateInfo['templateId']] = $templateInfo['name'];
     }
@@ -331,5 +343,17 @@ class PhpDocuSignWrapper {
       return $this->pest->last_response['body'];
     }
     return NULL;
+  }
+
+  public function get_templates_in_folder($folderName) {
+    $result = $this->_call('get', 'templates?folder=' . $folderName);
+    $templates = array();
+    if(empty($result['envelopeTemplates'])) {
+      return $templates;
+    }
+    foreach($result['envelopeTemplates'] as $envelopeTemplates) {
+      $templates[$envelopeTemplates['templateId']] = $envelopeTemplates['name'];
+    }
+    return $templates;
   }
 }
