@@ -324,4 +324,12 @@ class PhpDocuSignWrapper {
     }
     return $templates;
   }
+
+  public function get_documents_for_envelope($envelopeId) {
+    $result = $this->_call('get', 'envelopes/' . $envelopeId . '/documents/combined');
+    if($result === NULL && !empty($this->pest->last_response['body'])) {
+      return $this->pest->last_response['body'];
+    }
+    return NULL;
+  }
 }
