@@ -3,7 +3,7 @@
     "description": "A PHP wrapper for the RESTful DocuSign v2 API",
     "version": "1.0",
     "require": {
-        "educoder/pest": "^1.0",
+        "educoder/pest": "dev-master",
         "php": ">5.6"
     },
     "authors": [
