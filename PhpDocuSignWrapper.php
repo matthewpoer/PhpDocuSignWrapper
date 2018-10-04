@@ -234,12 +234,28 @@ class PhpDocuSignWrapper {
   /**
    * Get a list of all accessible folders. The list will be flattened and not
    * respect folder hierarchy.
-   * @todo implement something to help us respect folder hierarchy
-   * @param bool $flatten default TRUE, unusused. this is a todo item
+   * @param string $template default empty. Leave it empty to get only envelope
+   *     folders, or set to 'include' for both template and envelope folders, or
+   *     set to 'only' for what probably should be only template folders, but in
+   *     my experience is unpredictable and unrelated to any list of folders you
+   *     see in the DocuSign UI
    * @return array of folders, with the ID as the key and Name as the value
    */
-  public function get_folders($flatten = TRUE) {
-    $result = $this->_call('get', 'folders');
+  public function get_folders($template = '') {
+    if(
+      !empty($template)
+      && $template != 'only'
+      && $template != 'include'
+    ) {
+      throw new Exception("Invalid Template Setting. \$template value can be set to an empty string _or_ 'include' _or 'both'");
+    }
+
+    $payload = 'folders';
+    if(!empty($template)) {
+      $payload .= '?template=' . $template;
+    }
+
+    $result = $this->_call('get', $payload);
     $folders = array();
     if(empty($result['folders'])) {
       return $folders;
@@ -345,8 +361,15 @@ class PhpDocuSignWrapper {
     return NULL;
   }
 
-  public function get_templates_in_folder($folderName) {
-    $result = $this->_call('get', 'templates?folder=' . $folderName);
+  /**
+   * Get a list of Templates contained in a folder, specified by the folder ID
+   * @param string $folderId the ID of a folder. DocuSign API documentation
+   *               suggests that a string Folder Name is also valid but I have
+   *               not had luck with this.
+   * @return array keys are Template IDs and values are Template Names
+   */
+  public function get_templates_in_folder($folderId) {
+    $result = $this->_call('get', 'templates?folder=' . $folderId);
     $templates = array();
     if(empty($result['envelopeTemplates'])) {
       return $templates;

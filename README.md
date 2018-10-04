@@ -37,7 +37,7 @@ DocuSign does offer a solution to the cleartext password issue inherent here, an
 
 > a token that can be used for authentication in API calls instead of using the user name and password
 
-Okay, great. A Bash script is included here to get this API Password from DocuSign, just
+Okay, great. A Bash script is included here to get this API Password from DocuSign, just like this:
 
 ```
 $ ./GetApiPassword.sh
@@ -116,4 +116,27 @@ try {
     . PHP_EOL;
 }
 
+```
+
+## A Note About Folders
+The [DocuSign Folders:list API Endpoint](https://developers.docusign.com/esign-rest-api/reference/Folders/Folders/list) will, by default, only return a list of "Normal" (Envelope) Folders, i.e. Inbox, Sent Items, Deleted Items, etc. To get a list of _Template Folders_ we specify a GET param. `template`. The documentation tells us that `template`...
+
+> Specifies the items that are returned. Valid values are:
+> * include - The folder list will return normal folders plus template folders.
+> * only - Only the list of template folders are returned.
+
+I've found that the `only` value doesn't behave in accordance with these notes, and I can't tell where the folders `only` gives me live. To really get the Template Folders I would recommend fetching all Normal and Template folders with `include` and then removing any folders returned with no `template` param. specified (i.e. the Envelope Templates).
+
+Example code below will find a set of Templates housed in a Folder based on knowing the Folder's Name:
+
+```
+$desired_folder_name = 'My Cool Folder Name';
+$desired_folder_guid = NULL;
+$all_folders = $ds->get_folders('include');
+foreach($all_folders as $folder_id => $folder_name) {
+  if($folder_name == $desired_folder_name) {
+    $desired_folder_guid = $folder_id;
+  }
+}
+$approved_templates = $templates = $ds->get_templates_in_folder($desired_folder_guid);
 ```
